@@ -4,22 +4,30 @@ import { AppService } from './app.service';
 import { TasksModule } from './tasks/tasks.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { configValidationsSchema } from './config.schema';
 @Module({
   imports: [TasksModule,
     ConfigModule.forRoot({
-      envFilePath:['.env'],
-      isGlobal:true
+      envFilePath: ['.env'],
+      validationSchema: configValidationsSchema,
+      isGlobal: true
     }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.HOST_DB,
-      port: parseInt(process.env.PORT_DB),
-      username: process.env.USERNAME_DB,
-      password: process.env.PASSWORD_DB,
-      database: process.env.NAME_DATABASE,
-      autoLoadEntities: true,
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (ConfigService: ConfigService) => {
+        return {
+          type: 'mysql',
+          host: ConfigService.get('HOST_DB'),
+          port: parseInt(ConfigService.get('PORT_DB')),
+          username: ConfigService.get('USERNAME_DB'),
+          password: ConfigService.get('PASSWORD_DB'),
+          database: ConfigService.get('NAME_DATABASE'),
+          autoLoadEntities: true,
+          synchronize: true,
+        };
+      },
     }),
     AuthModule,
   ],
