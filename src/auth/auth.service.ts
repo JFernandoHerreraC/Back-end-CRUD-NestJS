@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { UsersRepository } from './users.repository';
@@ -22,6 +22,9 @@ export class AuthService {
     public async signIn(authCredentialsDto: AuthCredentialsDto): Promise<{ accessToken: string }> {
         const { username, password } = authCredentialsDto;
         const user: User = await this.usersRepository.findOne({ username });
+        if (!user) {
+            throw new InternalServerErrorException('Username does not exist!');
+        }
         const passwordCompared: Boolean = await bcrypt.compare(password, user.password);
         if (user && passwordCompared) {
             const payload: JwtPayload = { username };
